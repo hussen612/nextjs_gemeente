@@ -1,26 +1,55 @@
 @import "tailwindcss";
+/* ...existing code... */
 
+/* 1) Global color tokens */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --bg: #ffffff;
+  --fg: #000000;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --primary: #0f62fe;
+  color-scheme: light dark; /* lets form controls style correctly */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #0b0f14;
+    --fg: #f5f5f5;
+    --card: #111827;
+    --muted: #9ca3af;
+    --border: #374151;
+    --primary: #2563eb;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* 2) Apply globally */
+html, body {
+  background: var(--bg);
+  color: black;
+}
+
+/* 3) Common UI elements pick up vars */
+input, textarea, select {
+  background: var(--card);
+  color: var(--fg);
+  border: 1px solid var(--border);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--muted);
+}
+
+button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+}
+
+/* 4) Your modal/card */
+.modal-card {
+  background: var(--card);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
 }
