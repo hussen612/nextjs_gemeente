@@ -18,8 +18,7 @@ export default function Home() {
       <SignedOut>
         <SignInButton />
       </SignedOut>
-      
-      {/* Example of a protected link */}
+  
       <SignedIn>
         <p>
           <Link href="/dashboard">Go to Dashboard</Link>
