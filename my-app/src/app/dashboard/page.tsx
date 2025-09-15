@@ -1,27 +1,27 @@
 // app/dashboard/page.tsx
-'use client'; // This directive is essential for client-side functionality (hooks, event handlers)
+'use client'; // Essential directive
 
 import { useState } from 'react';
 import { useMutation } from 'convex/react';
-import { api } from '../../../../convex/_generated/api'; // Ensure this path is correct based on your project structure
-import { useUser } from '@clerk/nextjs';      // To retrieve the current authenticated user's ID
+import { api } from '../../../../convex/_generated/api';
+import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // For programmatic navigation after alert submission
+import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
   const [type, setType] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
-  const createAlert = useMutation(api.alerts.createAlert); // Hook to call the Convex mutation
-  const { user, isLoaded, isSignedIn } = useUser(); // Get user information from Clerk
-  const router = useRouter(); // Initialize the router for navigation
+  const createAlert = useMutation(api.alerts.createAlert);
+  const { user, isLoaded, isSignedIn } = useUser();
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isLoaded || !isSignedIn || !user?.id) {
       alert('You must be logged in to submit an alert. Redirecting to sign in.');
-      router.push('/sign-in'); // Redirect unauthenticated users
+      router.push('/sign-in');
       return;
     }
 
@@ -30,15 +30,12 @@ export default function DashboardPage() {
         type,
         description,
         location,
-        userId: user.id, // Pass the authenticated user's ID to Convex
+        userId: user.id,
       });
       alert('Alert submitted successfully!');
-      // Clear form after successful submission
       setType('');
       setDescription('');
       setLocation('');
-      // Optionally, navigate to a confirmation page or alert list
-      // router.push('/my-alerts');
     } catch (error) {
       console.error('Failed to submit alert:', error);
       alert('Failed to submit alert. Please try again.');
@@ -47,7 +44,7 @@ export default function DashboardPage() {
 
   return (
     <main style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-      <h1>Dashboard: Submit New Alert</h1>
+      <h1>Dashboard: Submit New Alert</h1> {/* This must be different from About page */}
 
       {!isLoaded ? (
         <p>Loading user data...</p>

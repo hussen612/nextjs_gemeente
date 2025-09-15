@@ -1,9 +1,9 @@
 // app/about/page.tsx
-export default function AboutPage() { // Renamed for clarity, but 'About' is also fine
+export default function AboutPage() {
   return (
-    <main>
-      <h1>About Next.js 15</h1>
-      <p>This is the about page of our Next.js application.</p>
+    <main style={{ padding: '20px' }}>
+      <h1>About This Application</h1> {/* Unique title */}
+      <p>This application allows citizens to report municipality service issues.</p> {/* Unique paragraph */}
     </main>
   );
 }
