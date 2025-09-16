@@ -16,16 +16,20 @@ const mapContainerStyle = {
 };
 
 const alertTypes = [
-  'Damaged Road',
-  'Excessive Garbage',
+  'Beschadigde Weg',
+  'Overmatige Afval',
   'Graffiti',
-  'Pothole',
-  'Streetlight Outage',
-  'Illegal Dumping',
-  'Water Leak',
-  'Noise Complaint',
-  'Public Safety Hazard',
-  'Other',
+  'Putdeksel',
+  'Straatlantaarn Storing',
+  'Stoplicht Storing',
+  'Vandalisme',
+  'Verkeersbord Beschadiging',
+  'Boomschade',
+  'Illegale Dump',
+  'Water Lek',
+  'Geluidsoverlast',
+  'Publieke Veiligheidsrisico',
+  'Overig',
 ];
 
 export default function DashboardPage() {

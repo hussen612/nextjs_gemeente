@@ -3,7 +3,7 @@ import './globals.css';
 import AppProviders from './providers';
 
 export const metadata = {
-  title: 'Government Alert App',
+  title: 'Gemeente Meldpunt',
   description: 'Report municipality issues',
 };
 
