@@ -10,5 +10,7 @@ export default defineSchema({
     userId: v.string(),      // ID of the user who submitted the alert (from Clerk)
     timestamp: v.number(),   // Time of submission
     status: v.string(),      // e.g., "new", "in progress", "resolved"
+    lat: v.optional(v.number()), // Latitude (WGS84) if provided
+    lng: v.optional(v.number()), // Longitude (WGS84) if provided
   }).index('by_userId', ['userId']), // Add an index for efficient querying by user
 });

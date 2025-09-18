@@ -54,7 +54,7 @@ h6 {
 :root {
   /* Primary Colours */
   --rotterdam-red: #c8102e;
-  --rotterdam-blue: #007bc7;
+  --rotterdam-blue: #39b54a;
   --rotterdam-green: #39b54a;
   --rotterdam-orange: #ff6b35;
   
@@ -253,7 +253,7 @@ a:focus {
 }
 
 .btn-primary {
-  background-color: var(--rotterdam-blue);
+  background-color: var(--rotterdam-green);
   color: var(--white);
 }
 
@@ -265,12 +265,12 @@ a:focus {
 
 .btn-secondary {
   background-color: transparent;
-  color: var(--rotterdam-blue);
-  border-color: var(--rotterdam-blue);
+  color: var(--rotterdam-green);
+  border-color: var(--rotterdam-green);
 }
 
 .btn-secondary:hover {
-  background-color: var(--rotterdam-blue);
+  background-color: var(--rotterdam-green);
   color: var(--white);
   text-decoration: none;
 }
