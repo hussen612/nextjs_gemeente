@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { SignInButton, SignedIn, SignedOut } from '@clerk/nextjs';
+import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 
 export default function HomePage() {
   return (
@@ -21,7 +21,7 @@ export default function HomePage() {
                 </SignInButton>
               </SignedOut>
               <SignedIn>
-                <span className="badge">Signed in</span>
+                <UserButton /> {/* Replaced span with UserButton */}
               </SignedIn>
             </nav>
           </div>
@@ -46,7 +46,7 @@ export default function HomePage() {
               <ul className="mb-0">
                 <li>Report broken streetlamps</li>
                 <li>Report vandalism and graffiti</li>
-                <li>Report fly‑tipping and litter problems</li>
+                <li>Report fly-tipping and litter problems</li>
                 <li>Report road or pavement damage</li>
                 <li>Follow up on reports after logging in</li>
               </ul>
