@@ -8,27 +8,23 @@ export const createAlert = mutation({
     description: v.string(),
     location: v.string(),
     userId: v.string(),
-    lat: v.optional(v.number()),
-    lng: v.optional(v.number()),
+    lat: v.number(),
+    lng: v.number(),
   },
   handler: async (ctx, args) => {
-    // Ensure the user is authenticated if you want to perform server-side auth
+    // Optional auth hardening:
     // const identity = await ctx.auth.getUserIdentity();
-    // if (!identity) {
-    //   throw new Error("Unauthenticated call to createAlert");
-    // }
-
-    const newAlertId = await ctx.db.insert('alerts', {
+    // if (!identity || identity.subject !== args.userId) throw new Error("Unauthorized");
+    await ctx.db.insert("alerts", {
       type: args.type,
       description: args.description,
       location: args.location,
-      userId: args.userId, // Use the provided userId, which should come from Clerk client-side
+      userId: args.userId,
       timestamp: Date.now(),
-      status: 'new', // Set initial status for new alerts
-      lat: args.lat ?? undefined,
-      lng: args.lng ?? undefined,
+      status: "open",
+      lat: args.lat,
+      lng: args.lng,
     });
-    return newAlertId;
   },
 });
 
