@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useMutation } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
-import { useUser } from '@clerk/nextjs';
+import { SignInButton, SignedIn, SignedOut, UserButton, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GoogleMap, Marker, useLoadScript, Autocomplete } from '@react-google-maps/api';
@@ -187,7 +187,9 @@ export default function DashboardPage() {
       {!isLoaded ? (
         <p>Loading user data...</p>
       ) : !isSignedIn ? (
-        <p>Please <Link href="/sign-in">sign in</Link> to submit an alert.</p>
+          <SignInButton>
+                  <button className="btn btn-primary">Inloggen</button>
+                </SignInButton>
       ) : (
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '20px', backgroundColor: '#f9f9f9', padding: '25px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
           <div>
