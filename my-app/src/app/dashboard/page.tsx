@@ -144,10 +144,16 @@ export default function DashboardPage() {
     }
 
     try {
+      if (!markerPosition) {
+        alert('Please choose a location on the map (click or search and select).');
+        return;
+      }
       await createAlert({
         type,
         description,
         location, // Formatted address string
+        lat: markerPosition.lat,
+        lng: markerPosition.lng,
         userId: user.id,
       });
       alert('Alert submitted successfully!');

@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useMutation } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
-import { useUser } from '@clerk/nextjs';
+import { SignInButton, SignedIn, SignedOut, UserButton, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GoogleMap, Marker, useLoadScript, Autocomplete } from '@react-google-maps/api';
@@ -39,6 +39,7 @@ export default function DashboardPage() {
   const [markerPosition, setMarkerPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 0, lng: 0 }); // Default initial center
   const [mapZoom, setMapZoom] = useState(8);
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -129,6 +130,30 @@ export default function DashboardPage() {
     });
   };
 
+  const geocodeAddressToMarker = useCallback((address: string) => {
+    if (!address || !window.google) return;
+    setIsGeocoding(true);
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address }, (results, status) => {
+      setIsGeocoding(false);
+      if (status === 'OK' && results && results[0]?.geometry?.location) {
+        const loc = results[0].geometry.location;
+        const lat = loc.lat();
+        const lng = loc.lng();
+        const pos = { lat, lng };
+        setMarkerPosition(pos);
+        setMapCenter(pos);
+        setMapZoom(15);
+        if (!location) setLocation(results[0].formatted_address || address);
+      }
+    });
+  }, [location]);
+
+  const handleManualLocationBlur = () => {
+    // If user typed an address and no marker yet, geocode it.
+    if (location && !markerPosition) geocodeAddressToMarker(location);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -143,12 +168,19 @@ export default function DashboardPage() {
       return;
     }
 
+    if (!markerPosition) {
+      alert('Please pick a location on the map (click or search) before submitting.');
+      return;
+    }
+
     try {
       await createAlert({
         type,
         description,
-        location, // Formatted address string
+        location,
         userId: user.id,
+        lat: markerPosition.lat,
+        lng: markerPosition.lng,
       });
       alert('Alert submitted successfully!');
       setType('');
@@ -163,12 +195,12 @@ export default function DashboardPage() {
             setMapZoom(14);
           },
           () => {
-            setMapCenter({ lat: 51.5074, lng: -0.1278 }); // London default
+            setMapCenter({ lat: 51.9244, lng: 4.4777 }); // Rotterdam, NL default
             setMapZoom(8);
           }
         );
       } else {
-        setMapCenter({ lat: 51.5074, lng: -0.1278 }); // London default
+          setMapCenter({ lat: 51.9244, lng: 4.4777 }); // Rotterdam, NL default
         setMapZoom(8);
       }
     } catch (error) {
@@ -187,7 +219,9 @@ export default function DashboardPage() {
       {!isLoaded ? (
         <p>Loading user data...</p>
       ) : !isSignedIn ? (
-        <p>Please <Link href="/sign-in">sign in</Link> to submit an alert.</p>
+          <SignInButton>
+                  <button className="btn btn-primary">Inloggen</button>
+                </SignInButton>
       ) : (
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '20px', backgroundColor: '#f9f9f9', padding: '25px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
           <div>
@@ -229,8 +263,9 @@ export default function DashboardPage() {
               <input
                 id="alertLocation"
                 type="text"
-                value={location} // Display the selected formatted address
-                onChange={(e) => setLocation(e.target.value)} // Allows manual typing, but onPlaceChanged overrides
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                onBlur={handleManualLocationBlur}
                 placeholder="Search for a location"
                 style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', boxSizing: 'border-box', marginBottom: '10px' }}
               />
