@@ -10,8 +10,13 @@ export default function HomePage() {
       <header className="site-header">
         <div className="container">
           <div className="header-row">
-            <Link href="/" className="brand">
-              Gemeentelijke Meldingen
+            <Link href="/" className="brand" aria-label="Gemeente Meldingen home">
+              <img
+              src="https://media.ffycdn.net/eu/gemeente-rotterdam/soYxtMssfc7dYXbBWnwc.svg?mod=v1/max=2400"
+              alt="Gemeente Meldingen"
+              className="brand-logo"
+              style={{ height: 40, width: 'auto', display: 'block' }}
+              />
             </Link>
             <nav className="nav">
               <Link href="/about" className="nav-link">
