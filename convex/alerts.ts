@@ -47,3 +47,30 @@ export const getAlerts = query({
     }));
   },
 });
+
+export const getMyAlerts = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+
+    const userId = identity.subject;
+    const alerts = await ctx.db
+      .query('alerts')
+      .withIndex('by_userId', (q) => q.eq('userId', userId))
+      .collect();
+
+    alerts.sort((a, b) => b.timestamp - a.timestamp);
+    return alerts.map(a => ({
+      _id: a._id,
+      type: a.type,
+      description: a.description,
+      location: a.location,
+      userId: a.userId,
+      timestamp: a.timestamp,
+      status: a.status,
+      lat: a.lat,
+      lng: a.lng,
+    }));
+  },
+});
