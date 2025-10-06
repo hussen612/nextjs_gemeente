@@ -6,7 +6,7 @@ import { api } from '../../../convex/_generated/api';
 import { GoogleMap, Marker, useLoadScript } from '@react-google-maps/api';
 import { useUser } from '@clerk/nextjs';
 
-const containerStyle = { width: '50%', height: '450px', borderRadius: 'var(--border-radius)' };
+const containerStyle = { width: '100%', height: '450px', borderRadius: 'var(--border-radius)' };
 const defaultCenter = { lat: 51.9244, lng: 4.4777 }; // Rotterdam
 
 export default function UserMap() {
@@ -47,35 +47,39 @@ export default function UserMap() {
       <div className="card-header">
         <h1 id="alerts-map-heading" className="card-title">Mijn meldingen</h1>
       </div>
-      <GoogleMap mapContainerStyle={containerStyle} center={defaultCenter} zoom={12} options={{ mapTypeControl: false }}>
-        {markers.map(m => (
-          <Marker key={String(m.id)} position={{ lat: m.lat, lng: m.lng }} title={m.type} />
-        ))}
-      </GoogleMap>
-      {markers.length === 0 && (
-        <p className="text-small text-muted p-3 mb-0">Je hebt nog geen meldingen met coördinaten.</p>
-      )}
 
-      {/* New: simple list of all user-submitted alerts */}
-      <div className="p-3">
-        <h2 className="h5 mb-2">Mijn meldingen (lijst)</h2>
-        {sortedAlerts.length === 0 ? (
-          <p className="text-small text-muted mb-0">Nog geen meldingen.</p>
-        ) : (
-          <ul className="list-unstyled mb-0">
-            {sortedAlerts.map(a => (
-              <li key={String(a._id)} className="mb-3">
-                <div className="fw-600">
-                  {a.type} <span className="text-muted">• {a.status || 'nieuw'}</span>
-                </div>
-                <div className="text-small">{a.description}</div>
-                <div className="text-tiny text-muted">
-                  {a.location} — {a.timestamp ? new Date(a.timestamp).toLocaleString() : ''}
-                </div>
-              </li>
+      {/* New: two-column layout */}
+      <div className="grid grid-2" style={{ gap: '1rem' }}>
+        <div>
+          <GoogleMap mapContainerStyle={containerStyle} center={defaultCenter} zoom={12} options={{ mapTypeControl: false }}>
+            {markers.map(m => (
+              <Marker key={String(m.id)} position={{ lat: m.lat, lng: m.lng }} title={m.type} />
             ))}
-          </ul>
-        )}
+          </GoogleMap>
+          {markers.length === 0 && (
+            <p className="text-small text-muted p-3 mb-0">Je hebt nog geen meldingen met coördinaten.</p>
+          )}
+        </div>
+
+        <div className="p-3" style={{ maxHeight: 450, overflowY: 'auto', borderLeft: '1px solid var(--border-secondary)' }}>
+          {sortedAlerts.length === 0 ? (
+            <p className="text-small text-muted mb-0">Nog geen meldingen.</p>
+          ) : (
+            <ul className="list-unstyled mb-0">
+              {sortedAlerts.map(a => (
+                <li key={String(a._id)} className="mb-3">
+                  <div className="fw-600">
+                    {a.type} <span className="text-muted">• {a.status || 'nieuw'}</span>
+                  </div>
+                  <div className="text-small">{a.description}</div>
+                  <div className="text-tiny text-muted">
+                    {a.location} — {a.timestamp ? new Date(a.timestamp).toLocaleString() : ''}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );

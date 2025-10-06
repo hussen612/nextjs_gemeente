@@ -297,6 +297,59 @@ export default function DashboardPage() {
       <div style={{ marginTop: '30px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
         <Link href="/" style={{ color: '#007bff', textDecoration: 'none' }}>← Back to Home</Link>
       </div>
+            <footer className="site-footer mt-5">
+        <div className="container">
+          <div className="grid grid-3 mb-4">
+            <div>
+              <h3 className="h5 mb-3">Diensten</h3>
+              <ul className="list-unstyled">
+                <li className="mb-2">
+                  <Link href="/report" className="text-muted">Meld een probleem</Link>
+                </li>
+                <li className="mb-2">
+                  <Link href="/status" className="text-muted">Bekijk status van melding</Link>
+                </li>
+                <li className="mb-2">
+                  <Link href="/map" className="text-muted">Bekijk kaart</Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="h5 mb-3">Informatie</h3>
+              <ul className="list-unstyled">
+                <li className="mb-2">
+                  <Link href="/about" className="text-muted">Over deze dienst</Link>
+                </li>
+                <li className="mb-2">
+                  <Link href="/help" className="text-muted">Hulp & ondersteuning</Link>
+                </li>
+                <li className="mb-2">
+                  <Link href="/privacy" className="text-muted">Privacybeleid</Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="h5 mb-3">Contact</h3>
+              <ul className="list-unstyled">
+                <li className="mb-2">
+                  <span className="text-muted">Telefoon: 14 010</span>
+                </li>
+                <li className="mb-2">
+                  <span className="text-muted">E-mail: info@rotterdam.nl</span>
+                </li>
+                <li className="mb-2">
+                  <Link href="/contact" className="text-muted">Contactformulier</Link>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="text-center pt-4" style={{ borderTop: '1px solid var(--border-secondary)' }}>
+            <p className="text-muted text-small mb-0">
+              © 2025 Gemeente Rotterdam. Alle rechten voorbehouden.
+            </p>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }
