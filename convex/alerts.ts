@@ -12,14 +12,13 @@ export const createAlert = mutation({
     lng: v.number(),
   },
   handler: async (ctx, args) => {
-    // Optional auth hardening:
-    // const identity = await ctx.auth.getUserIdentity();
-    // if (!identity || identity.subject !== args.userId) throw new Error("Unauthorized");
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== args.userId) throw new Error("Unauthorized");
     await ctx.db.insert("alerts", {
       type: args.type,
       description: args.description,
       location: args.location,
-      userId: args.userId,
+      userId: identity.subject,
       timestamp: Date.now(),
       status: "open",
       lat: args.lat,
