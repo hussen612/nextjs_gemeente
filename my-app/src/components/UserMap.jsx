@@ -6,7 +6,7 @@ import { api } from '../../../convex/_generated/api';
 import { GoogleMap, Marker, useLoadScript } from '@react-google-maps/api';
 import { useUser } from '@clerk/nextjs';
 
-const containerStyle = { width: '100%', height: '250px', borderRadius: 'var(--border-radius)' };
+const containerStyle = { width: '50%', height: '450px', borderRadius: 'var(--border-radius)' };
 const defaultCenter = { lat: 51.9244, lng: 4.4777 }; // Rotterdam
 
 export default function UserMap() {
@@ -30,6 +30,11 @@ export default function UserMap() {
     return { id: a._id, lat, lng, type: a.type, description: a.description };
   }).filter(Boolean);
 
+  // New: sort alerts for the simple list (newest first)
+  const sortedAlerts = (alerts || [])
+    .slice()
+    .sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0));
+
   if (loadError) {
     return <div className="card"><div className="card-header"><h2 className="card-title">Kaart</h2></div><p className="text-danger">Fout bij laden van Google Maps.</p></div>;
   }
@@ -40,7 +45,7 @@ export default function UserMap() {
   return (
     <div className="card" aria-labelledby="alerts-map-heading">
       <div className="card-header">
-        <h2 id="alerts-map-heading" className="card-title">Mijn meldingen (kaart)</h2>
+        <h1 id="alerts-map-heading" className="card-title">Mijn meldingen</h1>
       </div>
       <GoogleMap mapContainerStyle={containerStyle} center={defaultCenter} zoom={12} options={{ mapTypeControl: false }}>
         {markers.map(m => (
@@ -50,6 +55,28 @@ export default function UserMap() {
       {markers.length === 0 && (
         <p className="text-small text-muted p-3 mb-0">Je hebt nog geen meldingen met coördinaten.</p>
       )}
+
+      {/* New: simple list of all user-submitted alerts */}
+      <div className="p-3">
+        <h2 className="h5 mb-2">Mijn meldingen (lijst)</h2>
+        {sortedAlerts.length === 0 ? (
+          <p className="text-small text-muted mb-0">Nog geen meldingen.</p>
+        ) : (
+          <ul className="list-unstyled mb-0">
+            {sortedAlerts.map(a => (
+              <li key={String(a._id)} className="mb-3">
+                <div className="fw-600">
+                  {a.type} <span className="text-muted">• {a.status || 'nieuw'}</span>
+                </div>
+                <div className="text-small">{a.description}</div>
+                <div className="text-tiny text-muted">
+                  {a.location} — {a.timestamp ? new Date(a.timestamp).toLocaleString() : ''}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
