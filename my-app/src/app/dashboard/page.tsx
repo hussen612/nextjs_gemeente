@@ -24,6 +24,9 @@ export default function DashboardPage() {
               <Link href="/about" className="nav-link">
                 Over
               </Link>
+              <Link href="/admin-dashboard" className="nav-link">
+                Admin
+              </Link>
               <SignedOut >
                 <SignInButton>
                   <button className="btn btn-primary">Inloggen</button>

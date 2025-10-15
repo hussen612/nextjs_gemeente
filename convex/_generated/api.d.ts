@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as admin from "../admin.js";
 import type * as alerts from "../alerts.js";
 
 /**
@@ -24,6 +25,7 @@ import type * as alerts from "../alerts.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  admin: typeof admin;
   alerts: typeof alerts;
 }>;
 export declare const api: FilterApi<

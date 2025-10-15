@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { GoogleMap, Marker, useLoadScript } from '@react-google-maps/api';
@@ -75,6 +76,7 @@ export default function UserMap() {
                   <div className="text-tiny text-muted">
                     {a.location} — {a.timestamp ? new Date(a.timestamp).toLocaleString() : ''}
                   </div>
+                  <div className="text-tiny"><Link href={`/alerts/${a._id}`}>Bekijk details</Link></div>
                 </li>
               ))}
             </ul>

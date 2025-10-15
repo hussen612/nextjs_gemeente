@@ -23,6 +23,7 @@ export const createAlert = mutation({
       status: "open",
       lat: args.lat,
       lng: args.lng,
+      notes: [],
     });
   },
 });
@@ -72,5 +73,67 @@ export const getMyAlerts = query({
       lat: a.lat,
       lng: a.lng,
     }));
+  },
+});
+
+// Get a single alert by id (for detail pages)
+export const getAlertById = query({
+  args: { id: v.id("alerts") },
+  handler: async (ctx, args) => {
+    const alert = await ctx.db.get(args.id);
+    if (!alert) return null;
+    return alert;
+  },
+});
+
+// Admin: list all alerts (same as getAlerts but without slicing)
+export const getAllAlerts = query({
+  args: {},
+  handler: async (ctx) => {
+    const rows = await ctx.db.query('alerts').collect();
+    rows.sort((a, b) => b.timestamp - a.timestamp);
+    return rows;
+  },
+});
+
+// Admin: update status
+export const updateAlertStatus = mutation({
+  args: {
+    id: v.id("alerts"),
+    status: v.string(), // expected: open|in_progress|resolved (freeform for now)
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+    const admin = await ctx.db
+      .query('admins')
+      .withIndex('by_userId', q => q.eq('userId', identity.subject))
+      .unique();
+    if (!admin) throw new Error('Forbidden');
+    const existing = await ctx.db.get(args.id);
+    if (!existing) throw new Error("Not found");
+    await ctx.db.patch(args.id, { status: args.status });
+  },
+});
+
+// Admin: append a note
+export const addAlertNote = mutation({
+  args: {
+    id: v.id("alerts"),
+    text: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+    const admin = await ctx.db
+      .query('admins')
+      .withIndex('by_userId', q => q.eq('userId', identity.subject))
+      .unique();
+    if (!admin) throw new Error('Forbidden');
+    const existing = await ctx.db.get(args.id);
+    if (!existing) throw new Error("Not found");
+    const notes = existing.notes ?? [];
+    notes.push({ text: args.text, authorId: identity.subject, timestamp: Date.now() });
+    await ctx.db.patch(args.id, { notes });
   },
 });
