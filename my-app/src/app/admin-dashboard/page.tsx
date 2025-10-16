@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 
 export default function AdminDashboardPage() {
+    const amAdmin = useQuery((api as any).admin.isAdmin);
         const alerts = useQuery((api as any).alerts.getAllAlerts) || [];
     const updateStatus = useMutation((api as any).alerts.updateAlertStatus);
     const addNote = useMutation((api as any).alerts.addAlertNote);
@@ -55,44 +56,58 @@ export default function AdminDashboardPage() {
                 </div>
             </SignedOut>
 
-                    <SignedIn>
+            <SignedIn>
+                {amAdmin === undefined && (
+                    <div className="card p-3"><p>Autorisatie controleren…</p></div>
+                )}
+                {amAdmin === false && (
+                    <div className="card p-3">
+                        <h2 className="h5 mb-2">Geen toegang</h2>
+                        <p className="text-muted mb-3">Je bent niet gemachtigd om deze pagina te bekijken.</p>
+                        <Link href="/" className="btn btn-secondary">Terug naar home</Link>
+                    </div>
+                )}
+                {amAdmin === true && (
+                    <>
                         <section className="card p-3 mb-4">
                             <h2 className="h5 mb-3">Beheerders</h2>
                             <AdminManager admins={admins} onAdd={addAdmin} onRemove={removeAdmin} />
                         </section>
 
-                <div className="mb-3" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <label className="text-muted">Filter status:</label>
-                    <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-                        <option value="all">Alle</option>
-                        <option value="open">Open</option>
-                        <option value="in_progress">In behandeling</option>
-                        <option value="resolved">Opgelost</option>
-                    </select>
-                </div>
+                        <div className="mb-3" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                            <label className="text-muted">Filter status:</label>
+                            <select value={filter} onChange={(e) => setFilter(e.target.value)}>
+                                <option value="all">Alle</option>
+                                <option value="open">Open</option>
+                                <option value="in_progress">In behandeling</option>
+                                <option value="resolved">Opgelost</option>
+                            </select>
+                        </div>
 
-                {(displayed || []).length === 0 ? (
-                    <p className="text-muted">Geen meldingen gevonden.</p>
-                ) : (
-                    <div className="table-responsive">
-                        <table className="table">
-                            <thead>
-                                <tr>
-                                    <th>Melding</th>
-                                    <th>Locatie</th>
-                                    <th>Datum</th>
-                                    <th>Status</th>
-                                    <th>Notities</th>
-                                    <th>Acties</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {displayed.map((a: any) => (
-                                    <AlertRow key={String(a._id)} alert={a} onStatusChange={handleStatusChange} onAddNote={handleAddNote} />
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                        {(displayed || []).length === 0 ? (
+                            <p className="text-muted">Geen meldingen gevonden.</p>
+                        ) : (
+                            <div className="table-responsive">
+                                <table className="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Melding</th>
+                                            <th>Locatie</th>
+                                            <th>Datum</th>
+                                            <th>Status</th>
+                                            <th>Notities</th>
+                                            <th>Acties</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {displayed.map((a: any) => (
+                                            <AlertRow key={String(a._id)} alert={a} onStatusChange={handleStatusChange} onAddNote={handleAddNote} />
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </>
                 )}
             </SignedIn>
         </main>
