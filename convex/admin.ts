@@ -10,6 +10,27 @@ export const listAdmins = query({
   },
 });
 
+// Query: whether any admin exists
+export const hasAnyAdmin = query({
+  args: {},
+  handler: async (ctx) => {
+    const one = await ctx.db.query('admins').first();
+    return !!one;
+  },
+});
+
+// Mutation: bootstrap first admin (only if none exists)
+export const bootstrapSelf = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error('Unauthorized');
+    const any = await ctx.db.query('admins').first();
+    if (any) throw new Error('Already initialized');
+    await ctx.db.insert('admins', { userId: identity.subject, createdAt: Date.now() });
+  },
+});
+
 // Query: is current user an admin
 export const isAdmin = query({
   args: {},
@@ -21,6 +42,31 @@ export const isAdmin = query({
       .withIndex('by_userId', q => q.eq('userId', identity.subject))
       .unique();
     return !!row;
+  },
+});
+
+// Query: check Clerk-provided role/claims for admin
+// This checks a few common places Clerk roles are stored in the identity claims
+export const isAdminClerk = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return false;
+    const anyIdentity = identity as any;
+    const roleCandidate =
+      anyIdentity?.orgRole ||
+      anyIdentity?.organizationRole ||
+      anyIdentity?.publicMetadata?.role ||
+      anyIdentity?.unsafeMetadata?.role ||
+      anyIdentity?.role;
+    if (typeof roleCandidate === 'string') {
+      return roleCandidate.toLowerCase() === 'admin';
+    }
+    // Also support array of roles
+    if (Array.isArray(roleCandidate)) {
+      return roleCandidate.map((r: any) => String(r).toLowerCase()).includes('admin');
+    }
+    return false;
   },
 });
 

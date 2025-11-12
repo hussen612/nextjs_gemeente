@@ -82,6 +82,25 @@ export const getAlertById = query({
   handler: async (ctx, args) => {
     const alert = await ctx.db.get(args.id);
     if (!alert) return null;
+    // Only admins can view internal notes
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      const { notes, ...rest } = alert as any;
+      return rest;
+    }
+    const admin = await ctx.db
+      .query('admins')
+      .withIndex('by_userId', q => q.eq('userId', identity.subject))
+      .unique();
+    const idAny: any = identity;
+    const role = idAny?.orgRole || idAny?.organizationRole || idAny?.publicMetadata?.role || idAny?.unsafeMetadata?.role || idAny?.role;
+    const hasClerkAdmin = Array.isArray(role)
+      ? role.map((r: any) => String(r).toLowerCase()).includes('admin')
+      : String(role || '').toLowerCase() === 'admin';
+    if (!admin && !hasClerkAdmin) {
+      const { notes, ...rest } = alert as any;
+      return rest;
+    }
     return alert;
   },
 });
@@ -109,7 +128,12 @@ export const updateAlertStatus = mutation({
       .query('admins')
       .withIndex('by_userId', q => q.eq('userId', identity.subject))
       .unique();
-    if (!admin) throw new Error('Forbidden');
+    const idAny: any = identity;
+    const role = idAny?.orgRole || idAny?.organizationRole || idAny?.publicMetadata?.role || idAny?.unsafeMetadata?.role || idAny?.role;
+    const hasClerkAdmin = Array.isArray(role)
+      ? role.map((r: any) => String(r).toLowerCase()).includes('admin')
+      : String(role || '').toLowerCase() === 'admin';
+    if (!admin && !hasClerkAdmin) throw new Error('Forbidden');
     const existing = await ctx.db.get(args.id);
     if (!existing) throw new Error("Not found");
     await ctx.db.patch(args.id, { status: args.status });
@@ -129,7 +153,12 @@ export const addAlertNote = mutation({
       .query('admins')
       .withIndex('by_userId', q => q.eq('userId', identity.subject))
       .unique();
-    if (!admin) throw new Error('Forbidden');
+    const idAny: any = identity;
+    const role = idAny?.orgRole || idAny?.organizationRole || idAny?.publicMetadata?.role || idAny?.unsafeMetadata?.role || idAny?.role;
+    const hasClerkAdmin = Array.isArray(role)
+      ? role.map((r: any) => String(r).toLowerCase()).includes('admin')
+      : String(role || '').toLowerCase() === 'admin';
+    if (!admin && !hasClerkAdmin) throw new Error('Forbidden');
     const existing = await ctx.db.get(args.id);
     if (!existing) throw new Error("Not found");
     const notes = existing.notes ?? [];

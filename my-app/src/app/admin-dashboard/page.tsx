@@ -7,11 +7,13 @@ import Link from 'next/link';
 import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 
 export default function AdminDashboardPage() {
-    const amAdmin = useQuery((api as any).admin.isAdmin);
-        const alerts = useQuery((api as any).alerts.getAllAlerts) || [];
+        const amAdminClerk = useQuery((api as any).admin.isAdminClerk);
+        const amAdminTable = useQuery((api as any).admin.isAdmin);
+            const alerts = useQuery((api as any).alerts.getAllAlerts) || [];
     const updateStatus = useMutation((api as any).alerts.updateAlertStatus);
     const addNote = useMutation((api as any).alerts.addAlertNote);
         const admins = useQuery((api as any).admin.listAdmins) || [];
+            const hasAnyAdmin = useQuery((api as any).admin.hasAnyAdmin);
         const addAdmin = useMutation((api as any).admin.addAdmin);
         const removeAdmin = useMutation((api as any).admin.removeAdmin);
 
@@ -57,17 +59,22 @@ export default function AdminDashboardPage() {
             </SignedOut>
 
             <SignedIn>
-                {amAdmin === undefined && (
+                {amAdminClerk === undefined && amAdminTable === undefined && (
                     <div className="card p-3"><p>Autorisatie controleren…</p></div>
                 )}
-                {amAdmin === false && (
+                {amAdminClerk === false && amAdminTable === false && (
                     <div className="card p-3">
                         <h2 className="h5 mb-2">Geen toegang</h2>
                         <p className="text-muted mb-3">Je bent niet gemachtigd om deze pagina te bekijken.</p>
-                        <Link href="/" className="btn btn-secondary">Terug naar home</Link>
+                                                <div style={{ display: 'flex', gap: 8 }}>
+                                                    <Link href="/" className="btn btn-secondary">Terug naar home</Link>
+                                                    {hasAnyAdmin === false && (
+                                                        <Link href="/admin-bootstrap" className="btn btn-primary">Eerste beheerder instellen</Link>
+                                                    )}
+                                                </div>
                     </div>
                 )}
-                {amAdmin === true && (
+                {(amAdminClerk || amAdminTable) && (
                     <>
                         <section className="card p-3 mb-4">
                             <h2 className="h5 mb-3">Beheerders</h2>
