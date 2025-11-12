@@ -14,7 +14,6 @@ export default function MapWithAlerts() {
   const alerts = useQuery(api.alerts.getAlerts) || [];
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-    // You can add libraries: ['places'] if needed later
   });
 
   const markers = (alerts || []).map(a => {

@@ -3,30 +3,33 @@
 import React from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
+import type { Id } from '../../../../../convex/_generated/dataModel';
 import Link from 'next/link';
 import { GoogleMap, Marker, useLoadScript } from '@react-google-maps/api';
 import { useParams } from 'next/navigation';
 
 export default function AlertDetailPage() {
   const params = useParams();
-  const idParam = params?.id as string;
-  // Convex ids are structured; try to pass directly. If malformed, query returns null.
-  const alert = useQuery((api as any).alerts.getAlertById, idParam ? { id: idParam as any } : 'skip') as any;
+  
+  const idParam = params?.id as string | undefined;
+  const { isLoaded, loadError } = useLoadScript({
+     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+  });
 
-  if (!idParam) {
+  const alert = useQuery(
+    api.alerts.getAlertById,
+   idParam ? ({ id: idParam } as { id: Id<'alerts'> }) : undefined
+ );
+ if (!idParam) {
     return <main className="container p-4"><p>Geen ID opgegeven.</p></main>;
   }
   if (alert === undefined) {
-    return <main className="container p-4"><p>Laden...</p></main>;
+    return <main className="container p-4"><p>Melding laden…</p></main>;
   }
   if (alert === null) {
     return <main className="container p-4"><p>Melding niet gevonden.</p></main>;
   }
-
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-  });
-
+  
   return (
     <main className="container p-4">
       <div className="mb-3">
