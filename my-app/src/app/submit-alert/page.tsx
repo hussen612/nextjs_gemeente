@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useMutation } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
+import type { Id } from '../../../../convex/_generated/dataModel';
 import { SignInButton, SignedIn, SignedOut, UserButton, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -40,11 +41,17 @@ export default function DashboardPage() {
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 0, lng: 0 }); // Default initial center
   const [mapZoom, setMapZoom] = useState(8);
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null);
+  const [isUsingDeviceLoc, setIsUsingDeviceLoc] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<Array<{ file: File; previewUrl: string }>>([]);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
 
   const createAlert = useMutation(api.alerts.createAlert);
+  const generateUploadUrl = useMutation((api as any).files.generateUploadUrl);
   const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();
 
@@ -174,6 +181,31 @@ export default function DashboardPage() {
     }
 
     try {
+      setIsSubmitting(true);
+      setUploadError(null);
+
+      // Upload selected images to Convex storage
+  const uploadedImages: Array<{ storageId: Id<"_storage">; contentType: string }> = [];
+      for (const img of selectedImages) {
+        try {
+          const postUrl: string = await generateUploadUrl({});
+          const res = await fetch(postUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': img.file.type || 'application/octet-stream' },
+            body: img.file,
+          });
+          if (!res.ok) throw new Error(`Upload failed with ${res.status}`);
+          const json = await res.json();
+          if (!json?.storageId) throw new Error('No storageId returned');
+          uploadedImages.push({ storageId: json.storageId as Id<'_storage'>, contentType: img.file.type || 'application/octet-stream' });
+        } catch (err: any) {
+          console.error('Image upload failed:', err);
+          setUploadError('Een of meer afbeeldingen konden niet worden geüpload. Probeer het opnieuw.');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       await createAlert({
         type,
         description,
@@ -181,12 +213,16 @@ export default function DashboardPage() {
         userId: user.id,
         lat: markerPosition.lat,
         lng: markerPosition.lng,
+        images: uploadedImages,
       });
       alert('Alert submitted successfully!');
       setType('');
       setDescription('');
       setLocation('');
       setMarkerPosition(null); // Clear marker after submission
+      // Cleanup previews
+      selectedImages.forEach((i) => URL.revokeObjectURL(i.previewUrl));
+      setSelectedImages([]);
       // Reset map to initial state or default
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -195,18 +231,54 @@ export default function DashboardPage() {
             setMapZoom(14);
           },
           () => {
-            setMapCenter({ lat: 51.9244, lng: 4.4777 }); // Rotterdam, NL default
+            setMapCenter({ lat: 51.924038409199795, lng: 4.4778090834409054 }); // Rotterdam, NL default
             setMapZoom(8);
           }
         );
       } else {
-          setMapCenter({ lat: 51.9244, lng: 4.4777 }); // Rotterdam, NL default
+          setMapCenter({ lat: 51.924038409199795, lng: 4.4778090834409054 }); // Rotterdam, NL default
         setMapZoom(8);
       }
     } catch (error) {
       console.error('Failed to submit alert:', error);
       alert('Failed to submit alert. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  // Trigger device geolocation explicitly (user action)
+  const useDeviceLocation = () => {
+    if (!navigator.geolocation) {
+      setGeoError('Geolocatie wordt niet ondersteund door deze browser.');
+      return;
+    }
+    setGeoError(null);
+    setIsUsingDeviceLoc(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const coords = { lat: latitude, lng: longitude };
+        setMarkerPosition(coords);
+        setMapCenter(coords);
+        setMapZoom(16);
+        // Reverse geocode to address if possible
+        if (window.google) {
+          geocodeLatLng(coords, (addr) => {
+            setLocation(addr !== 'Location not found' ? addr : `${latitude},${longitude}`);
+          });
+        } else {
+          setLocation(`${latitude},${longitude}`);
+        }
+        setIsUsingDeviceLoc(false);
+      },
+      (err) => {
+        console.error('Geolocatie mislukt:', err);
+        setGeoError('Kon huidige locatie niet ophalen (toestemming geweigerd of fout).');
+        setIsUsingDeviceLoc(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   if (loadError) return <div>Error loading maps</div>;
@@ -223,7 +295,7 @@ export default function DashboardPage() {
                   <button className="btn btn-primary">Inloggen</button>
                 </SignInButton>
       ) : (
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '20px', backgroundColor: '#f9f9f9', padding: '25px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+  <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '20px', backgroundColor: '#f9f9f9', padding: '25px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
           <div>
             <label htmlFor="alertType" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Alert Type:</label>
             <select
@@ -252,6 +324,58 @@ export default function DashboardPage() {
               style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', boxSizing: 'border-box' }}
               placeholder="Provide detailed information about the issue."
             />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Foto's toevoegen:</label>
+            <div style={{ border: '1px dashed #ccc', borderRadius: 6, padding: 12, background: '#fff' }}>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  const maxFiles = 5;
+                  const maxSize = 5 * 1024 * 1024; // 5MB
+                  const next: Array<{ file: File; previewUrl: string }> = [];
+                  for (const f of files) {
+                    if (!f.type.startsWith('image/')) continue;
+                    if (f.size > maxSize) {
+                      setUploadError('Afbeeldingen moeten kleiner dan 5MB zijn.');
+                      continue;
+                    }
+                    next.push({ file: f, previewUrl: URL.createObjectURL(f) });
+                    if (selectedImages.length + next.length >= maxFiles) break;
+                  }
+                  setSelectedImages((prev) => [...prev, ...next].slice(0, maxFiles));
+                }}
+                style={{ display: 'block', marginBottom: 12 }}
+              />
+              {uploadError && (
+                <div style={{ color: '#b00020', fontSize: '0.85rem', marginBottom: 8 }}>{uploadError}</div>
+              )}
+              {selectedImages.length > 0 ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 12 }}>
+                  {selectedImages.map((img, idx) => (
+                    <div key={idx} style={{ position: 'relative', border: '1px solid #eee', borderRadius: 6, overflow: 'hidden', background: '#fafafa' }}>
+                      <img src={img.previewUrl} alt={`upload-${idx}`} style={{ width: '100%', height: 110, objectFit: 'cover', display: 'block' }} />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          URL.revokeObjectURL(img.previewUrl);
+                          setSelectedImages((prev) => prev.filter((_, i) => i !== idx));
+                        }}
+                        className="btn btn-danger"
+                        style={{ position: 'absolute', top: 6, right: 6, padding: '4px 8px' }}
+                      >
+                        Verwijderen
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-muted" style={{ fontSize: '0.85rem' }}>Je kunt maximaal 5 foto's toevoegen. Ondersteunde types: JPG, PNG, GIF.</div>
+              )}
+            </div>
           </div>
           <div>
             <label htmlFor="alertLocation" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Location:</label>
@@ -287,9 +411,23 @@ export default function DashboardPage() {
                 />
               )}
             </GoogleMap>
+            <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={useDeviceLocation}
+                disabled={isUsingDeviceLoc}
+                style={{ padding: '10px 14px', background: '#28a745', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+              >
+                {isUsingDeviceLoc ? 'Locatie ophalen…' : 'Gebruik mijn huidige locatie'}
+              </button>
+              {geoError && <div style={{ color: '#b00020', fontSize: '0.85rem' }}>{geoError}</div>}
+              {!markerPosition && !location && (
+                <div style={{ fontSize: '0.75rem', color: '#555' }}>Tip: klik op de kaart, zoek een adres, of gebruik je huidige locatie.</div>
+              )}
+            </div>
           </div>
-          <button type="submit" style={{ padding: '12px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold' }}>
-            Submit Alert
+          <button type="submit" disabled={isSubmitting} style={{ padding: '12px 20px', backgroundColor: isSubmitting ? '#6aa6ff' : '#007bff', color: 'white', border: 'none', borderRadius: '5px', cursor: isSubmitting ? 'not-allowed' : 'pointer', fontSize: '16px', fontWeight: 'bold' }}>
+            {isSubmitting ? 'Versturen…' : 'Submit Alert'}
           </button>
         </form>
       )}

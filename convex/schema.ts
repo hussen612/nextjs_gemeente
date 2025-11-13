@@ -4,22 +4,27 @@ import { v } from 'convex/values';
 
 export default defineSchema({
   admins: defineTable({
-    userId: v.string(),
+    email: v.string(),
     createdAt: v.number(),
-  }).index('by_userId', ['userId']),
+  }).index('by_email', ['email']),
   alerts: defineTable({
-    type: v.string(),        // alert type
-    description: v.string(), // description of the alert
-    location: v.string(),    // Location information (coordinates/address)
-    userId: v.string(),      // ID of the user who submitted the alert (from Clerk)
-    timestamp: v.number(),   // Time of submission
-    status: v.string(),      // e.g., "new", "in progress", "resolved"
-    lat: v.number(),         // Latitude (WGS84) 
-    lng: v.number(),         // Longitude (WGS84) 
+    type: v.string(),
+    description: v.string(),
+    location: v.string(),
+    userId: v.string(),
+    timestamp: v.number(),
+    status: v.string(),
+    lat: v.number(),
+    lng: v.number(), 
+    images: v.optional(v.array(v.object({
+      storageId: v.id("_storage"),
+      contentType: v.string(),
+      uploadedAt: v.number(),
+    }))),
     notes: v.optional(v.array(v.object({
       text: v.string(),
       authorId: v.string(),
       timestamp: v.number(),
     }))),
-  }).index('by_userId', ['userId']), // Add an index for efficient querying by user
+  }).index('by_userId', ['userId']),
 });

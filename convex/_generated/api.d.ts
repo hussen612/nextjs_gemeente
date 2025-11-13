@@ -15,6 +15,7 @@ import type {
 } from "convex/server";
 import type * as admin from "../admin.js";
 import type * as alerts from "../alerts.js";
+import type * as files from "../files.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -27,6 +28,7 @@ import type * as alerts from "../alerts.js";
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   alerts: typeof alerts;
+  files: typeof files;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

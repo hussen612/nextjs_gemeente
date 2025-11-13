@@ -23,7 +23,7 @@ export default function AdminBootstrapPage() {
   return (
     <main className="container p-4">
       <h1 className="h3 mb-3">Admin initialisatie</h1>
-      <p className="text-muted mb-4">Gebruik dit éénmalig om de eerste beheerder toe te voegen.</p>
+      <p className="text-muted mb-4">Gebruik dit éénmalig om de eerste beheerder toe te voegen. Beheerders worden nu beheerd op basis van e-mailadres.</p>
 
       <SignedOut>
         <div className="card p-3">
@@ -43,7 +43,7 @@ export default function AdminBootstrapPage() {
           </div>
         ) : (
           <div className="card p-3">
-            <p className="mb-3">Nog geen beheerders gevonden. Je kunt jezelf nu als beheerder instellen.</p>
+            <p className="mb-3">Nog geen beheerders gevonden. Je kunt jezelf nu als beheerder instellen. Je ingelogde e-mailadres zal gebruikt worden.</p>
             <button className="btn btn-primary" onClick={onBootstrap}>Maak mij beheerder</button>
           </div>
         )}

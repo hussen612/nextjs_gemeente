@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
@@ -19,6 +19,8 @@ export default function AlertDetailPage() {
   const alert = useQuery((api as any).alerts.getAlertById, idParam ? { id: idParam as any } : undefined) as any;
   const amAdminClerk = useQuery((api as any).admin.isAdminClerk);
   const amAdminTable = useQuery((api as any).admin.isAdmin);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const imageUrls = useQuery((api as any).files.getAlertImageUrls, idParam ? { alertId: idParam as any } : undefined) as string[] | undefined;
 
   // 3) Branch on render output only, not on which hooks are called
   if (!idParam) {
@@ -97,7 +99,38 @@ export default function AlertDetailPage() {
         </section>
       )}
 
+      {/* Fotos section visible to everyone if images exist */}
+      {(imageUrls && imageUrls.length > 0) && (
+          <section className="card mb-4">
+            <div className="card-header">
+              <h2 className="card-title">Foto's</h2>
+            </div>
+            <div className="p-3">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
+              {(imageUrls || []).map((url: string, idx: number) => (
+                <button key={idx} type="button" onClick={() => setLightboxUrl(url)} style={{ padding: 0, border: '1px solid #eee', borderRadius: 8, overflow: 'hidden', background: '#fafafa', cursor: 'pointer' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt={`foto-${idx}`} style={{ width: '100%', height: 140, objectFit: 'cover', display: 'block' }} />
+                </button>
+              ))}
+            </div>
+            {lightboxUrl && (
+              <div onClick={() => setLightboxUrl(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                <div onClick={(e) => e.stopPropagation()} style={{ background: '#000', padding: 8, borderRadius: 8, maxWidth: '90vw', maxHeight: '90vh' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={lightboxUrl} alt="foto" style={{ maxWidth: '88vw', maxHeight: '85vh', display: 'block', objectFit: 'contain' }} />
+                  <div style={{ textAlign: 'right', marginTop: 8 }}>
+                    <button className="btn btn-secondary" onClick={() => setLightboxUrl(null)}>Sluiten</button>
+                  </div>
+                </div>
+              </div>
+            )}
+            </div>
+          </section>
+      )}
+
       {(amAdminClerk || amAdminTable) ? (
+        <>
         <section className="card">
           <div className="card-header">
             <h2 className="card-title">Notities</h2>
@@ -117,6 +150,7 @@ export default function AlertDetailPage() {
             )}
           </div>
         </section>
+        </>
       ) : null}
     </main>
   );

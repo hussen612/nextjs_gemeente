@@ -1,12 +1,12 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 
-// Query: list all admins (userIds)
+// Query: list all admins (emails)
 export const listAdmins = query({
   args: {},
   handler: async (ctx) => {
     const rows = await ctx.db.query('admins').collect();
-    return rows.map(r => ({ _id: r._id, userId: r.userId, createdAt: r.createdAt }));
+    return rows.map(r => ({ _id: r._id, email: r.email, createdAt: r.createdAt }));
   },
 });
 
@@ -27,7 +27,9 @@ export const bootstrapSelf = mutation({
     if (!identity) throw new Error('Unauthorized');
     const any = await ctx.db.query('admins').first();
     if (any) throw new Error('Already initialized');
-    await ctx.db.insert('admins', { userId: identity.subject, createdAt: Date.now() });
+    const email = (identity as any)?.email ?? (identity as any)?.emailAddress;
+    if (!email) throw new Error('No email on identity');
+    await ctx.db.insert('admins', { email, createdAt: Date.now() });
   },
 });
 
@@ -37,9 +39,11 @@ export const isAdmin = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return false;
+    const email = (identity as any)?.email ?? (identity as any)?.emailAddress;
+    if (!email) return false;
     const row = await ctx.db
       .query('admins')
-      .withIndex('by_userId', q => q.eq('userId', identity.subject))
+      .withIndex('by_email', q => q.eq('email', email))
       .unique();
     return !!row;
   },
@@ -70,43 +74,45 @@ export const isAdminClerk = query({
   },
 });
 
-// Mutation: add an admin by Clerk userId
+// Mutation: add an admin by email
 export const addAdmin = mutation({
-  args: { userId: v.string() },
+  args: { email: v.string() },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error('Unauthorized');
+    const myEmail = (identity as any)?.email ?? (identity as any)?.emailAddress;
     // Only existing admins can add others
-    const me = await ctx.db
+    const me = myEmail ? await ctx.db
       .query('admins')
-      .withIndex('by_userId', q => q.eq('userId', identity.subject))
-      .unique();
+      .withIndex('by_email', q => q.eq('email', myEmail))
+      .unique() : null;
     if (!me) throw new Error('Forbidden');
 
     const existing = await ctx.db
       .query('admins')
-      .withIndex('by_userId', q => q.eq('userId', args.userId))
+      .withIndex('by_email', q => q.eq('email', args.email))
       .unique();
     if (existing) return;
-    await ctx.db.insert('admins', { userId: args.userId, createdAt: Date.now() });
+    await ctx.db.insert('admins', { email: args.email, createdAt: Date.now() });
   },
 });
 
-// Mutation: remove an admin by Clerk userId
+// Mutation: remove an admin by email
 export const removeAdmin = mutation({
-  args: { userId: v.string() },
+  args: { email: v.string() },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error('Unauthorized');
-    const me = await ctx.db
+    const myEmail = (identity as any)?.email ?? (identity as any)?.emailAddress;
+    const me = myEmail ? await ctx.db
       .query('admins')
-      .withIndex('by_userId', q => q.eq('userId', identity.subject))
-      .unique();
+      .withIndex('by_email', q => q.eq('email', myEmail))
+      .unique() : null;
     if (!me) throw new Error('Forbidden');
 
     const existing = await ctx.db
       .query('admins')
-      .withIndex('by_userId', q => q.eq('userId', args.userId))
+      .withIndex('by_email', q => q.eq('email', args.email))
       .unique();
     if (!existing) return;
     await ctx.db.delete(existing._id);

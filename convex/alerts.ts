@@ -10,6 +10,10 @@ export const createAlert = mutation({
     userId: v.string(),
     lat: v.number(),
     lng: v.number(),
+    images: v.optional(v.array(v.object({
+      storageId: v.id("_storage"),
+      contentType: v.string(),
+    }))),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -23,6 +27,11 @@ export const createAlert = mutation({
       status: "open",
       lat: args.lat,
       lng: args.lng,
+      images: (args.images ?? []).map(img => ({
+        storageId: img.storageId,
+        contentType: img.contentType,
+        uploadedAt: Date.now(),
+      })),
       notes: [],
     });
   },
@@ -88,10 +97,11 @@ export const getAlertById = query({
       const { notes, ...rest } = alert as any;
       return rest;
     }
-    const admin = await ctx.db
+    const email = (identity as any)?.email ?? (identity as any)?.emailAddress;
+    const admin = email ? await ctx.db
       .query('admins')
-      .withIndex('by_userId', q => q.eq('userId', identity.subject))
-      .unique();
+      .withIndex('by_email', q => q.eq('email', email))
+      .unique() : null;
     const idAny: any = identity;
     const role = idAny?.orgRole || idAny?.organizationRole || idAny?.publicMetadata?.role || idAny?.unsafeMetadata?.role || idAny?.role;
     const hasClerkAdmin = Array.isArray(role)
@@ -124,10 +134,11 @@ export const updateAlertStatus = mutation({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthorized");
-    const admin = await ctx.db
+    const email = (identity as any)?.email ?? (identity as any)?.emailAddress;
+    const admin = email ? await ctx.db
       .query('admins')
-      .withIndex('by_userId', q => q.eq('userId', identity.subject))
-      .unique();
+      .withIndex('by_email', q => q.eq('email', email))
+      .unique() : null;
     const idAny: any = identity;
     const role = idAny?.orgRole || idAny?.organizationRole || idAny?.publicMetadata?.role || idAny?.unsafeMetadata?.role || idAny?.role;
     const hasClerkAdmin = Array.isArray(role)
@@ -149,10 +160,11 @@ export const addAlertNote = mutation({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthorized");
-    const admin = await ctx.db
+    const email = (identity as any)?.email ?? (identity as any)?.emailAddress;
+    const admin = email ? await ctx.db
       .query('admins')
-      .withIndex('by_userId', q => q.eq('userId', identity.subject))
-      .unique();
+      .withIndex('by_email', q => q.eq('email', email))
+      .unique() : null;
     const idAny: any = identity;
     const role = idAny?.orgRole || idAny?.organizationRole || idAny?.publicMetadata?.role || idAny?.unsafeMetadata?.role || idAny?.role;
     const hasClerkAdmin = Array.isArray(role)
