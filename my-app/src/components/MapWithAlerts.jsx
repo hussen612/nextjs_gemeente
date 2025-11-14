@@ -45,8 +45,8 @@ export default function MapWithAlerts() {
       <div className="card-header">
 
       <GoogleMap mapContainerStyle={containerStyle} center={defaultCenter} zoom={12} options={{ mapTypeControl: false }}>
-        {markers.map(m => (
-          <Marker key={String(m._id)} position={{ lat: m.lat, lng: m.lng }} title={m.type} />
+        {markers.map((m, idx) => (
+          <Marker key={m.id ? String(m.id) : `${m.lat},${m.lng},${idx}`} position={{ lat: m.lat, lng: m.lng }} title={m.type} />
         ))}
       </GoogleMap>
       {markers.length === 0 && (

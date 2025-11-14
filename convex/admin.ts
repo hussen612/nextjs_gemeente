@@ -1,5 +1,38 @@
 import { v } from 'convex/values';
-import { mutation, query } from './_generated/server';
+import { mutation, query, action } from './_generated/server';
+import { api } from './_generated/api';
+
+// Action: check if a user exists in Clerk by email
+export const checkUserExists = action({
+  args: { email: v.string() },
+  handler: async (ctx, args): Promise<{ exists: boolean; error?: string }> => {
+    const clerkSecretKey = process.env.CLERK_SECRET_KEY;
+    if (!clerkSecretKey) {
+      return { exists: false, error: 'Clerk configuratie ontbreekt' };
+    }
+
+    try {
+      // Call Clerk API to search for user by email
+      const response = await fetch(`https://api.clerk.com/v1/users?email_address=${encodeURIComponent(args.email)}`, {
+        headers: {
+          'Authorization': `Bearer ${clerkSecretKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        console.error('Clerk API error:', response.status, await response.text());
+        return { exists: false, error: 'Kon gebruiker niet verifiëren' };
+      }
+
+      const users = await response.json();
+      return { exists: Array.isArray(users) && users.length > 0 };
+    } catch (error) {
+      console.error('Error checking user:', error);
+      return { exists: false, error: 'Fout bij het verifiëren van gebruiker' };
+    }
+  },
+});
 
 // Query: list all admins (emails)
 export const listAdmins = query({
@@ -89,11 +122,27 @@ export const addAdmin = mutation({
     if (!identity) throw new Error('Unauthorized');
     const myEmail = (identity as any)?.email ?? (identity as any)?.emailAddress;
     // Only existing admins can add others
-    const me = myEmail ? await ctx.db
-      .query('admins')
-      .withIndex('by_email', q => q.eq('email', myEmail))
-      .unique() : null;
-    if (!me) throw new Error('Forbidden');
+    let me = null as any;
+    if (myEmail) {
+      me = await ctx.db
+        .query('admins')
+        .withIndex('by_email', q => q.eq('email', myEmail))
+        .unique();
+    }
+    // Fallback to userId if email check fails
+    if (!me) {
+      me = await ctx.db
+        .query('admins')
+        .withIndex('by_userId', q => q.eq('userId', identity.subject))
+        .unique();
+    }
+    // Also check Clerk admin role as fallback
+    const idAny: any = identity;
+    const role = idAny?.orgRole || idAny?.organizationRole || idAny?.publicMetadata?.role || idAny?.unsafeMetadata?.role || idAny?.role;
+    const hasClerkAdmin = Array.isArray(role)
+      ? role.map((r: any) => String(r).toLowerCase()).includes('admin')
+      : String(role || '').toLowerCase() === 'admin';
+    if (!me && !hasClerkAdmin) throw new Error('Forbidden');
 
     const existing = await ctx.db
       .query('admins')
@@ -111,11 +160,25 @@ export const removeAdmin = mutation({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error('Unauthorized');
     const myEmail = (identity as any)?.email ?? (identity as any)?.emailAddress;
-    const me = myEmail ? await ctx.db
-      .query('admins')
-      .withIndex('by_email', q => q.eq('email', myEmail))
-      .unique() : null;
-    if (!me) throw new Error('Forbidden');
+    let me = null as any;
+    if (myEmail) {
+      me = await ctx.db
+        .query('admins')
+        .withIndex('by_email', q => q.eq('email', myEmail))
+        .unique();
+    }
+    if (!me) {
+      me = await ctx.db
+        .query('admins')
+        .withIndex('by_userId', q => q.eq('userId', identity.subject))
+        .unique();
+    }
+    const idAny: any = identity;
+    const role = idAny?.orgRole || idAny?.organizationRole || idAny?.publicMetadata?.role || idAny?.unsafeMetadata?.role || idAny?.role;
+    const hasClerkAdmin = Array.isArray(role)
+      ? role.map((r: any) => String(r).toLowerCase()).includes('admin')
+      : String(role || '').toLowerCase() === 'admin';
+    if (!me && !hasClerkAdmin) throw new Error('Forbidden');
 
     const existing = await ctx.db
       .query('admins')
