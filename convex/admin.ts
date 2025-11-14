@@ -40,12 +40,19 @@ export const isAdmin = query({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return false;
     const email = (identity as any)?.email ?? (identity as any)?.emailAddress;
-    if (!email) return false;
-    const row = await ctx.db
+    // Prefer email, fallback to legacy userId
+    if (email) {
+      const byEmail = await ctx.db
+        .query('admins')
+        .withIndex('by_email', q => q.eq('email', email))
+        .unique();
+      if (byEmail) return true;
+    }
+    const byUserId = await ctx.db
       .query('admins')
-      .withIndex('by_email', q => q.eq('email', email))
+      .withIndex('by_userId', q => q.eq('userId', identity.subject))
       .unique();
-    return !!row;
+    return !!byUserId;
   },
 });
 

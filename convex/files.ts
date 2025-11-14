@@ -30,10 +30,19 @@ export const getImageUrls = query({
     // Enforce admin-only access
     const idAny: any = identity;
     const email = idAny?.email ?? idAny?.emailAddress;
-    const adminRow = email ? await ctx.db
-      .query('admins')
-      .withIndex('by_email', q => q.eq('email', email))
-      .unique() : null;
+    let adminRow = null as any;
+    if (email) {
+      adminRow = await ctx.db
+        .query('admins')
+        .withIndex('by_email', q => q.eq('email', email))
+        .unique();
+    }
+    if (!adminRow) {
+      adminRow = await ctx.db
+        .query('admins')
+        .withIndex('by_userId', q => q.eq('userId', identity.subject))
+        .unique();
+    }
     const role = idAny?.orgRole || idAny?.organizationRole || idAny?.publicMetadata?.role || idAny?.unsafeMetadata?.role || idAny?.role;
     const hasClerkAdmin = Array.isArray(role)
       ? role.map((r: any) => String(r).toLowerCase()).includes('admin')

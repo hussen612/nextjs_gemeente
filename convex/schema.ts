@@ -4,9 +4,10 @@ import { v } from 'convex/values';
 
 export default defineSchema({
   admins: defineTable({
-    email: v.string(),
+    email: v.optional(v.string()),
+    userId: v.optional(v.string()),
     createdAt: v.number(),
-  }).index('by_email', ['email']),
+  }).index('by_email', ['email']).index('by_userId', ['userId']),
   alerts: defineTable({
     type: v.string(),
     description: v.string(),

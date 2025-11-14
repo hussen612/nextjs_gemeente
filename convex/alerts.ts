@@ -98,10 +98,19 @@ export const getAlertById = query({
       return rest;
     }
     const email = (identity as any)?.email ?? (identity as any)?.emailAddress;
-    const admin = email ? await ctx.db
-      .query('admins')
-      .withIndex('by_email', q => q.eq('email', email))
-      .unique() : null;
+    let admin = null as any;
+    if (email) {
+      admin = await ctx.db
+        .query('admins')
+        .withIndex('by_email', q => q.eq('email', email))
+        .unique();
+    }
+    if (!admin) {
+      admin = await ctx.db
+        .query('admins')
+        .withIndex('by_userId', q => q.eq('userId', identity.subject))
+        .unique();
+    }
     const idAny: any = identity;
     const role = idAny?.orgRole || idAny?.organizationRole || idAny?.publicMetadata?.role || idAny?.unsafeMetadata?.role || idAny?.role;
     const hasClerkAdmin = Array.isArray(role)
@@ -135,10 +144,19 @@ export const updateAlertStatus = mutation({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthorized");
     const email = (identity as any)?.email ?? (identity as any)?.emailAddress;
-    const admin = email ? await ctx.db
-      .query('admins')
-      .withIndex('by_email', q => q.eq('email', email))
-      .unique() : null;
+    let admin = null as any;
+    if (email) {
+      admin = await ctx.db
+        .query('admins')
+        .withIndex('by_email', q => q.eq('email', email))
+        .unique();
+    }
+    if (!admin) {
+      admin = await ctx.db
+        .query('admins')
+        .withIndex('by_userId', q => q.eq('userId', identity.subject))
+        .unique();
+    }
     const idAny: any = identity;
     const role = idAny?.orgRole || idAny?.organizationRole || idAny?.publicMetadata?.role || idAny?.unsafeMetadata?.role || idAny?.role;
     const hasClerkAdmin = Array.isArray(role)
@@ -161,10 +179,19 @@ export const addAlertNote = mutation({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthorized");
     const email = (identity as any)?.email ?? (identity as any)?.emailAddress;
-    const admin = email ? await ctx.db
-      .query('admins')
-      .withIndex('by_email', q => q.eq('email', email))
-      .unique() : null;
+    let admin = null as any;
+    if (email) {
+      admin = await ctx.db
+        .query('admins')
+        .withIndex('by_email', q => q.eq('email', email))
+        .unique();
+    }
+    if (!admin) {
+      admin = await ctx.db
+        .query('admins')
+        .withIndex('by_userId', q => q.eq('userId', identity.subject))
+        .unique();
+    }
     const idAny: any = identity;
     const role = idAny?.orgRole || idAny?.organizationRole || idAny?.publicMetadata?.role || idAny?.unsafeMetadata?.role || idAny?.role;
     const hasClerkAdmin = Array.isArray(role)
