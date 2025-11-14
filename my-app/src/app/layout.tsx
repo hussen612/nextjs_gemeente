@@ -1,6 +1,7 @@
 // app/layout.tsx
 import './globals.css';
 import AppProviders from './providers';
+import SiteHeader from '../components/SiteHeader';
 
 export const metadata = {
   title: 'Gemeente Meldpunt',
@@ -11,7 +12,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <SiteHeader />
+          {children}
+        </AppProviders>
       </body>
     </html>
   );
