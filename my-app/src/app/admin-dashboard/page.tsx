@@ -499,7 +499,6 @@ function AlertDetailsModal({ alert, onClose, onStatusChange, onAddNote, noteText
                                     const url = imageUrlMap[String(img.storageId)];
                                     return (
                                         <button key={idx} type="button" onClick={() => url && onOpenImage(url)} style={{ padding: 0, border: '1px solid #eee', background: '#fafafa', borderRadius: 8, overflow: 'hidden', cursor: url ? 'pointer' : 'default' }}>
-                                            {/* eslint-disable-next-line @next/next/no-img-element */}
                                             {url ? <img src={url} alt={`img-${idx}`} style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }} /> : (
                                                 <div className="text-tiny text-muted" style={{ padding: 10, textAlign: 'center' }}>Laden…</div>
                                             )}
