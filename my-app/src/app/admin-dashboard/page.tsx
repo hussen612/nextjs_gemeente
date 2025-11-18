@@ -5,6 +5,7 @@ import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import Link from 'next/link';
 import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
+import { GoogleMap, Marker, useLoadScript } from '@react-google-maps/api';
 
 // Helper function to translate status codes to Dutch labels
 function getStatusLabel(status: string): string {
@@ -35,6 +36,9 @@ export default function AdminDashboardPage() {
         (api as any).alerts.getAlertById,
         selectedAlertId !== null ? { id: selectedAlertId as any } : "skip"
     ) as any;
+    const { isLoaded: mapLoaded, loadError: mapLoadError } = useLoadScript({
+        googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    });
     const isAdmin = !!(amAdminClerk || amAdminTable);
     const imageIdsForModal = useMemo(() => (fullAlert?.images || []).map((i: any) => i.storageId), [fullAlert]);
     const modalImagePairs = useQuery((api as any).files.getImageUrls, isAdmin && imageIdsForModal.length > 0 ? { storageIds: imageIdsForModal } : "skip") || [];
@@ -66,6 +70,30 @@ export default function AdminDashboardPage() {
         
         return filtered;
     }, [alerts, filter, searchQuery]);
+
+    const mapMarkers = useMemo(() => {
+        return (displayed || [])
+            .map((alert: any) => {
+                const lat = alert.lat;
+                const lng = alert.lng;
+                if (lat == null || lng == null) return null;
+                return {
+                    id: String(alert._id),
+                    lat,
+                    lng,
+                    type: alert.type,
+                    status: alert.status,
+                };
+            })
+            .filter(Boolean) as Array<{ id: string; lat: number; lng: number; type: string; status: string }>;
+    }, [displayed]);
+
+    const mapCenter = useMemo(() => {
+        if (mapMarkers.length > 0) {
+            return { lat: mapMarkers[0].lat, lng: mapMarkers[0].lng };
+        }
+        return { lat: 51.9244, lng: 4.4777 }; // Rotterdam default
+    }, [mapMarkers]);
 
     const handleStatusChange = async (id: string, status: string) => {
         try {
@@ -123,6 +151,41 @@ export default function AdminDashboardPage() {
                         <section className="card p-3 mb-4">
                             <h2 className="h5 mb-3">Beheerders</h2>
                             <AdminManager admins={admins} onAdd={addAdmin} onRemove={removeAdmin} />
+                        </section>
+
+                        <section className="card p-3 mb-4">
+                            <h2 className="h5 mb-3">Meldingenkaart</h2>
+                            {mapLoadError && (
+                                <p className="text-danger">Fout bij laden van Google Maps.</p>
+                            )}
+                            {!mapLoadError && !mapLoaded && (
+                                <p>Kaart laden…</p>
+                            )}
+                            {mapLoaded && (
+                                <div style={{ width: '100%', height: 360, borderRadius: 12, overflow: 'hidden' }}>
+                                    <GoogleMap
+                                        mapContainerStyle={{ width: '100%', height: '100%' }}
+                                        center={mapCenter}
+                                        zoom={12}
+                                        options={{ mapTypeControl: false }}
+                                    >
+                                        {mapMarkers.map((marker) => (
+                                            <Marker
+                                                key={marker.id}
+                                                position={{ lat: marker.lat, lng: marker.lng }}
+                                                title={marker.type}
+                                                onClick={() => {
+                                                    setSelectedAlertId(marker.id);
+                                                    setModalNoteText('');
+                                                }}
+                                            />
+                                        ))}
+                                    </GoogleMap>
+                                </div>
+                            )}
+                            {mapMarkers.length === 0 && mapLoaded && !mapLoadError && (
+                                <p className="text-muted mt-2">Geen meldingen met coördinaten binnen de huidige filters.</p>
+                            )}
                         </section>
 
                         <div className="mb-3" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
