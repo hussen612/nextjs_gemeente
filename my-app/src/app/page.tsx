@@ -1,8 +1,7 @@
-// pages/index.jsx (or wherever your HomePage component is located)
 'use client';
 import Link from 'next/link';
 import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
-import MapWithAlerts from '../components/MapWithAlerts'; // Adjust this import path as necessary
+import MapWithAlerts from '../components/MapWithAlerts';
 
 export default function HomePage() {
   return (
@@ -33,7 +32,6 @@ export default function HomePage() {
               <div className="card-header">
                 <h2 id="map" className="card-title">Actieve meldingen</h2>
               </div>
-              {/* Map with active alerts */}
               <MapWithAlerts />
             </section>
           </div>

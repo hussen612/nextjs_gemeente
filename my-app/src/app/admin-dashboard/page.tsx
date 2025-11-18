@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 import { GoogleMap, Marker, useLoadScript } from '@react-google-maps/api';
 
-// Helper function to translate status codes to Dutch labels
 function getStatusLabel(status: string): string {
     const statusMap: Record<string, string> = {
         'open': 'Open',
@@ -31,7 +30,6 @@ export default function AdminDashboardPage() {
     const [filter, setFilter] = useState<string>('all');
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null);
-    // Fetch full alert details only when a modal is open.
     const fullAlert = useQuery(
         (api as any).alerts.getAlertById,
         selectedAlertId !== null ? { id: selectedAlertId as any } : "skip"
@@ -53,12 +51,10 @@ export default function AdminDashboardPage() {
     const displayed = useMemo(() => {
         let filtered = alerts;
         
-        // Filter by status
         if (filter !== 'all') {
             filtered = filtered.filter((a: any) => a.status === filter);
         }
         
-        // Filter by search query (type, description, location)
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
             filtered = filtered.filter((a: any) => 
@@ -92,7 +88,7 @@ export default function AdminDashboardPage() {
         if (mapMarkers.length > 0) {
             return { lat: mapMarkers[0].lat, lng: mapMarkers[0].lng };
         }
-        return { lat: 51.9244, lng: 4.4777 }; // Rotterdam default
+        return { lat: 51.9244, lng: 4.4777 };
     }, [mapMarkers]);
 
     const handleStatusChange = async (id: string, status: string) => {
@@ -248,7 +244,6 @@ export default function AdminDashboardPage() {
                 )}
             </SignedIn>
         </main>
-        {/* Modal + Lightbox mount points */}
         {(selectedAlertId && fullAlert) && (
             <AlertDetailsModal
                 alert={fullAlert}
@@ -264,7 +259,6 @@ export default function AdminDashboardPage() {
         {modalLightboxUrl && (
             <div onClick={() => setModalLightboxUrl(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 2100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div onClick={(e) => e.stopPropagation()} style={{ background: '#000', padding: 12, borderRadius: 8, maxWidth: '90vw', maxHeight: '90vh' }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={modalLightboxUrl} alt="foto" style={{ maxWidth: '88vw', maxHeight: '80vh', objectFit: 'contain', display: 'block' }} />
                     <div style={{ textAlign: 'right', marginTop: 8 }}>
                         <button className="btn btn-secondary" onClick={() => setModalLightboxUrl(null)}>Sluiten</button>
@@ -285,7 +279,6 @@ export default function AdminDashboardPage() {
         const handleAddAdmin = async () => {
             if (!newAdminEmail.trim()) return;
             
-            // Basic email validation
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(newAdminEmail)) {
                 setErrorMessage('Voer een geldig e-mailadres in.');
@@ -294,7 +287,6 @@ export default function AdminDashboardPage() {
 
             setIsAdding(true);
             try {
-                // Check if user exists in Clerk first
                 const userCheck = await checkUserExists({ email: newAdminEmail });
                 
                 if (userCheck.error) {
@@ -309,7 +301,6 @@ export default function AdminDashboardPage() {
                     return;
                 }
 
-                // User exists, proceed to add as admin
                 await onAdd({ email: newAdminEmail });
                 setNewAdminEmail('');
                 setErrorMessage(null);
@@ -353,7 +344,6 @@ export default function AdminDashboardPage() {
                 </div>
                 <div className="text-tiny text-muted mt-1">Voeg beheerders toe op basis van e-mailadres. Het e-mailadres moet overeenkomen met dat van de gebruiker die inlogt.</div>
                 
-                {/* Error Modal */}
                 {errorMessage && (
                     <div 
                         onClick={() => setErrorMessage(null)} 
@@ -423,7 +413,6 @@ function AlertRow({ alert, onStatusChange, onAddNote, onOpenDetails }: { alert: 
                             return (
                                 <button key={idx} type="button" onClick={() => url && setLightboxUrl(url)} style={{ display: 'block', width: 56, height: 56, borderRadius: 6, overflow: 'hidden', background: '#f2f2f2', border: '1px solid #eee', padding: 0, cursor: url ? 'pointer' : 'default' }}>
                                     {url ? (
-                                        // eslint-disable-next-line @next/next/no-img-element
                                         <img src={url} alt="bijlage" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                                     ) : (
                                         <div className="text-tiny text-muted" style={{ padding: 6, textAlign: 'center' }}>Laden…</div>
@@ -437,7 +426,6 @@ function AlertRow({ alert, onStatusChange, onAddNote, onOpenDetails }: { alert: 
                         {lightboxUrl && (
                           <div onClick={() => setLightboxUrl(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
                             <div onClick={(e) => e.stopPropagation()} style={{ background: '#000', padding: 8, borderRadius: 8, maxWidth: '90vw', maxHeight: '90vh' }}>
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={lightboxUrl} alt="bijlage" style={{ maxWidth: '88vw', maxHeight: '85vh', display: 'block', objectFit: 'contain' }} />
                               <div style={{ textAlign: 'right', marginTop: 8 }}>
                                 <button className="btn btn-secondary" onClick={() => setLightboxUrl(null)}>Sluiten</button>
@@ -456,7 +444,6 @@ function AlertRow({ alert, onStatusChange, onAddNote, onOpenDetails }: { alert: 
     );
 }
 
-// Modal component inside same file for simplicity
 function AlertDetailsModal({ alert, onClose, onStatusChange, onAddNote, noteText, setNoteText, imageUrlMap, onOpenImage }: {
     alert: any; onClose: () => void; onStatusChange: (id: string, status: string) => void; onAddNote: (id: string, text: string, clear: () => void) => void;
     noteText: string; setNoteText: (t: string) => void; imageUrlMap: Record<string,string>; onOpenImage: (url: string) => void;
@@ -482,7 +469,7 @@ function AlertDetailsModal({ alert, onClose, onStatusChange, onAddNote, noteText
                         <section>
                             <h3 className="h6 mb-2">Locatie op kaart</h3>
                             <div style={{ width: '100%', height: 280, borderRadius: 8, overflow: 'hidden', border: '1px solid #eee' }}>
-                                <iframe
+                                        <iframe
                                     width="100%"
                                     height="100%"
                                     style={{ border: 0 }}

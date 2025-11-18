@@ -36,9 +36,9 @@ const alertTypes = [
 export default function DashboardPage() {
   const [type, setType] = useState('');
   const [description, setDescription] = useState('');
-  const [location, setLocation] = useState(''); // Will store formatted address string
+  const [location, setLocation] = useState('');
   const [markerPosition, setMarkerPosition] = useState<{ lat: number; lng: number } | null>(null);
-  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 0, lng: 0 }); // Default initial center
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 0, lng: 0 });
   const [mapZoom, setMapZoom] = useState(8);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
@@ -57,10 +57,9 @@ export default function DashboardPage() {
 
   const { isLoaded: isMapLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string,
-    libraries: libraries as any, // Type assertion for libraries
+    libraries: libraries as any,
   });
 
-  // Geolocation for initial map center
   useEffect(() => {
     if (navigator.geolocation && isMapLoaded) {
       navigator.geolocation.getCurrentPosition(
@@ -68,17 +67,15 @@ export default function DashboardPage() {
           const { latitude, longitude } = position.coords;
           const newCenter = { lat: latitude, lng: longitude };
           setMapCenter(newCenter);
-          setMapZoom(14); // Zoom in on current location
+          setMapZoom(14);
         },
         (error) => {
           console.error("Error getting user's location:", error);
-          // Default to a general location if geolocation fails (e.g., London)
           setMapCenter({ lat: 51.5074, lng: -0.1278 });
           setMapZoom(8);
         }
       );
     } else if (isMapLoaded) {
-      // Geolocation not supported or map not loaded yet, default to a general location
       setMapCenter({ lat: 51.5074, lng: -0.1278 });
       setMapZoom(8);
     }
@@ -157,7 +154,6 @@ export default function DashboardPage() {
   }, [location]);
 
   const handleManualLocationBlur = () => {
-    // If user typed an address and no marker yet, geocode it.
     if (location && !markerPosition) geocodeAddressToMarker(location);
   };
 
@@ -182,10 +178,9 @@ export default function DashboardPage() {
 
     try {
       setIsSubmitting(true);
-      setUploadError(null);
+        setUploadError(null);
 
-      // Upload selected images to Convex storage
-  const uploadedImages: Array<{ storageId: Id<"_storage">; contentType: string }> = [];
+        const uploadedImages: Array<{ storageId: Id<"_storage">; contentType: string }> = [];
       for (const img of selectedImages) {
         try {
           const postUrl: string = await generateUploadUrl({});
@@ -219,11 +214,9 @@ export default function DashboardPage() {
       setType('');
       setDescription('');
       setLocation('');
-      setMarkerPosition(null); // Clear marker after submission
-      // Cleanup previews
+      setMarkerPosition(null);
       selectedImages.forEach((i) => URL.revokeObjectURL(i.previewUrl));
       setSelectedImages([]);
-      // Reset map to initial state or default
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -231,12 +224,12 @@ export default function DashboardPage() {
             setMapZoom(14);
           },
           () => {
-            setMapCenter({ lat: 51.924038409199795, lng: 4.4778090834409054 }); // Rotterdam, NL default
+            setMapCenter({ lat: 51.924038409199795, lng: 4.4778090834409054 });
             setMapZoom(8);
           }
         );
       } else {
-          setMapCenter({ lat: 51.924038409199795, lng: 4.4778090834409054 }); // Rotterdam, NL default
+          setMapCenter({ lat: 51.924038409199795, lng: 4.4778090834409054 });
         setMapZoom(8);
       }
     } catch (error) {
@@ -247,7 +240,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Trigger device geolocation explicitly (user action)
   const useDeviceLocation = () => {
     if (!navigator.geolocation) {
       setGeoError('Geolocatie wordt niet ondersteund door deze browser.');
@@ -262,7 +254,6 @@ export default function DashboardPage() {
         setMarkerPosition(coords);
         setMapCenter(coords);
         setMapZoom(16);
-        // Reverse geocode to address if possible
         if (window.google) {
           geocodeLatLng(coords, (addr) => {
             setLocation(addr !== 'Location not found' ? addr : `${latitude},${longitude}`);
@@ -335,7 +326,7 @@ export default function DashboardPage() {
                 onChange={(e) => {
                   const files = Array.from(e.target.files || []);
                   const maxFiles = 5;
-                  const maxSize = 5 * 1024 * 1024; // 5MB
+                  const maxSize = 5 * 1024 * 1024;
                   const next: Array<{ file: File; previewUrl: string }> = [];
                   for (const f of files) {
                     if (!f.type.startsWith('image/')) continue;
@@ -379,7 +370,6 @@ export default function DashboardPage() {
           </div>
           <div>
             <label htmlFor="alertLocation" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Location:</label>
-            {/* Google Maps Autocomplete Input */}
             <Autocomplete
               onLoad={(autocomplete) => { autocompleteRef.current = autocomplete; }}
               onPlaceChanged={onPlaceChanged}
@@ -394,7 +384,6 @@ export default function DashboardPage() {
                 style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', boxSizing: 'border-box', marginBottom: '10px' }}
               />
             </Autocomplete>
-            {/* Google Map Component */}
             <GoogleMap
               mapContainerStyle={mapContainerStyle}
               center={mapCenter}

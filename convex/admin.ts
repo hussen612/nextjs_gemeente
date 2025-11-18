@@ -2,7 +2,6 @@ import { v } from 'convex/values';
 import { mutation, query, action } from './_generated/server';
 import { api } from './_generated/api';
 
-// Action: check if a user exists in Clerk by email
 export const checkUserExists = action({
   args: { email: v.string() },
   handler: async (ctx, args): Promise<{ exists: boolean; error?: string }> => {
@@ -12,7 +11,6 @@ export const checkUserExists = action({
     }
 
     try {
-      // Call Clerk API to search for user by email
       const response = await fetch(`https://api.clerk.com/v1/users?email_address=${encodeURIComponent(args.email)}`, {
         headers: {
           'Authorization': `Bearer ${clerkSecretKey}`,
@@ -34,7 +32,6 @@ export const checkUserExists = action({
   },
 });
 
-// Query: list all admins (emails)
 export const listAdmins = query({
   args: {},
   handler: async (ctx) => {
@@ -43,7 +40,6 @@ export const listAdmins = query({
   },
 });
 
-// Query: whether any admin exists
 export const hasAnyAdmin = query({
   args: {},
   handler: async (ctx) => {
@@ -52,7 +48,6 @@ export const hasAnyAdmin = query({
   },
 });
 
-// Mutation: bootstrap first admin (only if none exists)
 export const bootstrapSelf = mutation({
   args: {},
   handler: async (ctx) => {
@@ -66,14 +61,12 @@ export const bootstrapSelf = mutation({
   },
 });
 
-// Query: is current user an admin
 export const isAdmin = query({
   args: {},
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return false;
     const email = (identity as any)?.email ?? (identity as any)?.emailAddress;
-    // Prefer email, fallback to legacy userId
     if (email) {
       const byEmail = await ctx.db
         .query('admins')
@@ -89,8 +82,6 @@ export const isAdmin = query({
   },
 });
 
-// Query: check Clerk-provided role/claims for admin
-// This checks a few common places Clerk roles are stored in the identity claims
 export const isAdminClerk = query({
   args: {},
   handler: async (ctx) => {
@@ -106,7 +97,6 @@ export const isAdminClerk = query({
     if (typeof roleCandidate === 'string') {
       return roleCandidate.toLowerCase() === 'admin';
     }
-    // Also support array of roles
     if (Array.isArray(roleCandidate)) {
       return roleCandidate.map((r: any) => String(r).toLowerCase()).includes('admin');
     }
@@ -114,14 +104,12 @@ export const isAdminClerk = query({
   },
 });
 
-// Mutation: add an admin by email
 export const addAdmin = mutation({
   args: { email: v.string() },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error('Unauthorized');
     const myEmail = (identity as any)?.email ?? (identity as any)?.emailAddress;
-    // Only existing admins can add others
     let me = null as any;
     if (myEmail) {
       me = await ctx.db
@@ -129,14 +117,12 @@ export const addAdmin = mutation({
         .withIndex('by_email', q => q.eq('email', myEmail))
         .unique();
     }
-    // Fallback to userId if email check fails
     if (!me) {
       me = await ctx.db
         .query('admins')
         .withIndex('by_userId', q => q.eq('userId', identity.subject))
         .unique();
     }
-    // Also check Clerk admin role as fallback
     const idAny: any = identity;
     const role = idAny?.orgRole || idAny?.organizationRole || idAny?.publicMetadata?.role || idAny?.unsafeMetadata?.role || idAny?.role;
     const hasClerkAdmin = Array.isArray(role)
@@ -153,7 +139,6 @@ export const addAdmin = mutation({
   },
 });
 
-// Mutation: remove an admin by email
 export const removeAdmin = mutation({
   args: { email: v.string() },
   handler: async (ctx, args) => {

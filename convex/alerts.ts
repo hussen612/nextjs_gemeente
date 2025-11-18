@@ -1,4 +1,3 @@
-// convex/alerts.ts
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 
@@ -37,12 +36,10 @@ export const createAlert = mutation({
   },
 });
 
-// Public query to list recent alerts (limit 100) for map & dashboard
 export const getAlerts = query({
   args: {},
   handler: async (ctx) => {
     const alerts = await ctx.db.query('alerts').collect();
-    // Sort newest first
     alerts.sort((a, b) => b.timestamp - a.timestamp);
     return alerts.slice(0, 100).map(a => ({
       _id: a._id,
@@ -85,13 +82,11 @@ export const getMyAlerts = query({
   },
 });
 
-// Get a single alert by id (for detail pages)
 export const getAlertById = query({
   args: { id: v.id("alerts") },
   handler: async (ctx, args) => {
     const alert = await ctx.db.get(args.id);
     if (!alert) return null;
-    // Only admins can view internal notes
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       const { notes, ...rest } = alert as any;
@@ -124,7 +119,6 @@ export const getAlertById = query({
   },
 });
 
-// Admin: list all alerts (same as getAlerts but without slicing)
 export const getAllAlerts = query({
   args: {},
   handler: async (ctx) => {
@@ -134,11 +128,10 @@ export const getAllAlerts = query({
   },
 });
 
-// Admin: update status
 export const updateAlertStatus = mutation({
   args: {
     id: v.id("alerts"),
-    status: v.string(), // expected: open|in_progress|resolved (freeform for now)
+    status: v.string(),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -169,7 +162,6 @@ export const updateAlertStatus = mutation({
   },
 });
 
-// Admin: append a note
 export const addAlertNote = mutation({
   args: {
     id: v.id("alerts"),

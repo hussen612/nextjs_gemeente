@@ -1,4 +1,3 @@
-// components/MapWithAlerts.jsx
 'use client';
 
 import React, { useMemo } from 'react';
@@ -8,7 +7,7 @@ import { api } from '../../../convex/_generated/api';
 import { GoogleMap, Marker, InfoWindowF, useLoadScript } from '@react-google-maps/api';
 
 const containerStyle = { width: '100%', height: '270px', borderRadius: 'var(--border-radius)' };
-const defaultCenter = { lat: 51.9244, lng: 4.4777 }; // Rotterdam
+const defaultCenter = { lat: 51.9244, lng: 4.4777 };
 
 export default function MapWithAlerts() {
   const alerts = useQuery(api.alerts.getAlerts) || [];

@@ -1,4 +1,3 @@
-// app/layout.tsx
 import './globals.css';
 import AppProviders from './providers';
 import SiteHeader from '../components/SiteHeader';
