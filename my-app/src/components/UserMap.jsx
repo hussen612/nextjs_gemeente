@@ -28,8 +28,6 @@ export default function UserMap() {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
   });
-  const fullAlert = useQuery(api.alerts.getAlertById, selectedAlertId ? { id: selectedAlertId } : "skip");
-  const selectedImages = useQuery(api.files.getAlertImageUrls, selectedAlertId ? { alertId: selectedAlertId } : "skip") || [];
 
   const filteredAlerts = useMemo(() => {
     let filtered = alerts || [];
@@ -50,15 +48,10 @@ export default function UserMap() {
     return filtered;
   }, [alerts, statusFilter, searchQuery]);
 
-  const selectedAlert = useMemo(() => {
+  const selectedAlertSummary = useMemo(() => {
     if (!selectedAlertId) return null;
-    return fullAlert || filteredAlerts.find(a => String(a._id) === String(selectedAlertId)) || null;
-  }, [selectedAlertId, fullAlert, filteredAlerts]);
-
-  const selectedImageUrls = useMemo(() => {
-    if (!selectedAlertId) return [];
-    return selectedImages;
-  }, [selectedAlertId, selectedImages]);
+    return filteredAlerts.find(a => String(a._id) === String(selectedAlertId)) || null;
+  }, [selectedAlertId, filteredAlerts]);
 
       if (!isSignedIn) {
         return <div className="card"><div className="card-header"><h2 className="card-title">Kaart</h2></div><p>Log in om jouw meldingen op de kaart te zien.</p></div>;
@@ -194,36 +187,62 @@ export default function UserMap() {
         </div>
       </div>
 
-      {selectedAlert && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '60px 24px', zIndex: 2000 }}
-          onClick={handleCloseModal}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{ width: '100%', maxWidth: 720, background: '#fff', borderRadius: 12, boxShadow: '0 6px 24px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', overflow: 'hidden', maxHeight: 'calc(100vh - 120px)' }}
-          >
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 className="h5 mb-0">Melding details</h2>
-              <button className="btn btn-secondary" onClick={handleCloseModal}>Sluiten</button>
-            </div>
-            <div style={{ padding: 20, display: 'grid', gap: 20, overflowY: 'auto' }}>
+      {selectedAlertId && (
+        <AlertDetailsModal
+          alertId={selectedAlertId}
+          fallbackAlert={selectedAlertSummary}
+          onRequestClose={handleCloseModal}
+        />
+      )}
+    </div>
+  );
+}
+
+function AlertDetailsModal({ alertId, fallbackAlert, onRequestClose }) {
+  const fullAlert = useQuery(api.alerts.getAlertById, { id: alertId }) || null;
+  const selectedImages = useQuery(api.files.getAlertImageUrls, { alertId }) || [];
+
+  const alert = fullAlert || fallbackAlert;
+  const isLoading = !alert;
+
+  const handleBackdropClick = () => onRequestClose();
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '60px 24px', zIndex: 2000 }}
+      onClick={handleBackdropClick}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ width: '100%', maxWidth: 720, background: '#fff', borderRadius: 12, boxShadow: '0 6px 24px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', overflow: 'hidden', maxHeight: 'calc(100vh - 120px)' }}
+      >
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 className="h5 mb-0">Melding details</h2>
+          <button className="btn btn-secondary" onClick={onRequestClose}>Sluiten</button>
+        </div>
+        <div style={{ padding: 20, display: 'grid', gap: 20, overflowY: 'auto' }}>
+          {isLoading ? (
+            <section>
+              <p className="text-small text-muted mb-0">Melding wordt geladen...</p>
+            </section>
+          ) : (
+            <>
               <section>
                 <h3 className="h6 mb-2">Algemeen</h3>
-                <div className="text-small"><strong>Type:</strong> {selectedAlert.type}</div>
-                <div className="text-small"><strong>Beschrijving:</strong> {selectedAlert.description}</div>
-                <div className="text-small"><strong>Locatie:</strong> {selectedAlert.location}</div>
-                <div className="text-small"><strong>Datum:</strong> {selectedAlert.timestamp ? new Date(selectedAlert.timestamp).toLocaleString() : 'Onbekend'}</div>
-                <div className="text-small"><strong>Status:</strong> {getStatusLabel(selectedAlert.status)}</div>
+                <div className="text-small"><strong>Type:</strong> {alert.type}</div>
+                <div className="text-small"><strong>Beschrijving:</strong> {alert.description}</div>
+                <div className="text-small"><strong>Locatie:</strong> {alert.location}</div>
+                <div className="text-small"><strong>Datum:</strong> {alert.timestamp ? new Date(alert.timestamp).toLocaleString() : 'Onbekend'}</div>
+                <div className="text-small"><strong>Status:</strong> {getStatusLabel(alert.status)}</div>
               </section>
 
-              {(selectedImageUrls.length > 0) && (
+              {selectedImages.length > 0 && (
                 <section>
                   <h3 className="h6 mb-2">Foto's</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(120px,1fr))', gap: 12 }}>
-                    {selectedImageUrls.map((url, idx) => (
+                    {selectedImages.map((url, idx) => (
                       <div key={idx} style={{ border: '1px solid #eee', borderRadius: 8, overflow: 'hidden', background: '#fafafa' }}>
                         <img src={url} alt={`alert-img-${idx}`} style={{ width: '100%', height: 120, objectFit: 'cover' }} />
                       </div>
@@ -233,12 +252,12 @@ export default function UserMap() {
               )}
 
               <section>
-                <Link href={`/alerts/${selectedAlert._id}`} className="btn btn-primary">Ga naar detailpagina</Link>
+                <Link href={`/alerts/${alert._id}`} className="btn btn-primary">Ga naar detailpagina</Link>
               </section>
-            </div>
-          </div>
+            </>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

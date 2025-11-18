@@ -17,9 +17,6 @@ export default function SiteHeader() {
             />
           </Link>
           <nav className="nav">
-            <Link href="/about" className="nav-link">
-              Over
-            </Link>
             <Link href="/admin-dashboard" className="nav-link">
               Admin
             </Link>
