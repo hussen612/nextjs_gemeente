@@ -1,4 +1,3 @@
-/** Tailwind CSS v4 config */
 export default {
   content: [
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
