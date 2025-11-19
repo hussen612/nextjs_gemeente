@@ -38,9 +38,6 @@ export default function HomePage() {
 
           <section className="text-center mb-5" aria-label="Volgende stappen">
             <div className="list-inline">
-              <Link href="/about" className="btn btn-secondary">
-                Over deze dienst
-              </Link>
               <SignedOut>
                 <SignInButton>
                   <button className="btn btn-primary btn-large">
